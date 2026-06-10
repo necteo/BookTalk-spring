@@ -54,16 +54,32 @@ Refresh Token Rotation을 적용해 재발급 시 기존 토큰을 폐기하고 
 ```
 요청
  └─▶ JwtAuthenticationFilter
-      ├─ WHITELIST 경로 → 필터 스킵
-      └─ 그 외 → 토큰 파싱 → SecurityContext 설정
+      ├─ WHITELIST(/api/book, /api/comment, /api/auth 등) → 파싱 스킵
+      └─ 그 외 → 토큰 파싱 → SecurityContext 설정 (만료/오류면 401)
  └─▶ SecurityConfig (authorizeHttpRequests)
-      ├─ /api/book/**, /api/comment/**, /api/auth/**, /api/member/me → permitAll
+      ├─ /api/book/**, /api/comment/**, /api/auth/**, /oauth2/** → permitAll
       ├─ /api/admin/** → ADMIN
-      └─ 그 외 → authenticated
+      └─ 그 외(/api/member/me 포함) → authenticated
 ```
 
 `JwtAuthenticationFilter`는 토큰 파싱과 인증 설정만 담당하고,
 인가 제어는 `SecurityConfig`에서 일원화해 책임을 분리했습니다.
+
+`/api/member/me`는 WHITELIST·permitAll에서 제외해, 토큰이 없거나 만료되면 **401**을 반환합니다.
+프런트는 이 401을 받아 자동으로 토큰을 재발급(refresh)합니다.
+
+### 토큰 재발급 / 자동 로그인 흐름
+
+```
+요청 (Access Token 만료)
+    → 401
+    → 프런트 Axios 인터셉터가 /api/auth/refresh 호출
+        ├─ Refresh Token 유효 → 새 Access/Refresh 발급(Rotation) → 원요청 재시도
+        └─ Refresh Token 만료/무효 → 비로그인 처리
+```
+
+Access Token 쿠키(15분)가 만료돼도 Refresh Token(7일)이 살아있으면 재발급으로 로그인이 유지됩니다.
+(refresh 요청 자체는 재시도 대상에서 제외해 무한 루프를 방지)
 
 ---
 
@@ -88,7 +104,7 @@ Refresh Token Rotation을 적용해 재발급 시 기존 토큰을 폐기하고 
 |---|---|---|
 | POST | `/api/auth/refresh` | Access Token 재발급 |
 | DELETE | `/api/auth/logout` | 로그아웃 (쿠키 삭제) |
-| GET | `/api/member/me` | 내 정보 조회 (비로그인 시 204) |
+| GET | `/api/member/me` | 내 정보 조회 (미인증 시 401 → refresh 트리거) |
 
 ### AI 챗봇
 | Method | URL | 설명 | 인증 |
