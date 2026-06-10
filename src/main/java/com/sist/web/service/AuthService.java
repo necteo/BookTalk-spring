@@ -9,7 +9,7 @@ import com.sist.web.exception.ErrorCode;
 import com.sist.web.repository.RefreshTokenRepository;
 import com.sist.web.token.JwtTokenProvider;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -26,14 +26,14 @@ public class AuthService {
         RefreshToken savedToken = refreshTokenRepository.findByToken(refreshTokenValue)
                 .orElseThrow(() -> new CustomException(ErrorCode.TOKEN_INVALID));
 
-        // 2. 만료 여부 확인
-        if (jwtTokenProvider.isExpired(refreshTokenValue)) {
+        // 2. 토큰 파싱 (만료 시 TOKEN_EXPIRED 예외 발생)
+        String subject;
+        try {
+            subject = jwtTokenProvider.getSubject(refreshTokenValue);
+        } catch (CustomException e) {
             refreshTokenRepository.delete(savedToken);
-            throw new CustomException(ErrorCode.TOKEN_EXPIRED);
+            throw e;
         }
-
-        // 3. Access Token 재발급
-        String subject = jwtTokenProvider.getSubject(refreshTokenValue);
         String role    = savedToken.getMember().getRole().getKey();
         String newAccessToken = jwtTokenProvider.createAccessToken(subject, role);
 
@@ -45,7 +45,7 @@ public class AuthService {
         return new TokenResult(newAccessToken, newRefreshToken);
     }
 
-    // 변경 없음 — logout은 원래도 토큰 값만 받으면 됨
+    // logout은 원래도 토큰 값만 받으면 됨
     public void logout(String refreshTokenValue) {
         RefreshToken savedToken = refreshTokenRepository.findByToken(refreshTokenValue)
                 .orElseThrow(() -> new CustomException(ErrorCode.TOKEN_INVALID));

@@ -15,10 +15,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import lombok.RequiredArgsConstructor;
-
 @Component
-@RequiredArgsConstructor
 public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationFailureHandler {
 
     @Value("${oauth2.redirect-url}")

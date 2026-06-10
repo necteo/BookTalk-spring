@@ -24,26 +24,27 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
 
-    // 인증 불필요 경로 — SecurityConfig의 permitAll과 맞춰야 함
+    // JWT 파싱을 건너뛸 경로 — 실제 인가는 SecurityConfig에서 처리
     private static final List<String> WHITELIST = List.of(
-    	"/",
-    	"/book",
-        "/api/auth",
-        "/login",
-        "/oauth2"
+        "/", "/error", "/login", "/oauth2",
+        "/api/book", "/api/comment", "/api/auth"
     );
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        return WHITELIST.stream().anyMatch(path::startsWith);
+        return WHITELIST.stream().anyMatch(white ->
+            white.equals("/") ? path.equals("/") : path.startsWith(white)
+        );
     }
 
     @Override
@@ -75,6 +76,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             } catch (CustomException e) {
                 // 토큰 오류 시 SecurityContext 비우고 401 반환
+                log.warn("JWT 검증 실패: {}", e.getErrorCode().getMessage());
                 SecurityContextHolder.clearContext();
                 sendErrorResponse(response, e.getErrorCode());
                 return;

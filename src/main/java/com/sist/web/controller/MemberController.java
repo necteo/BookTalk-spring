@@ -1,16 +1,13 @@
 package com.sist.web.controller;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.sist.web.entity.AuthProvider;
-import com.sist.web.entity.Member;
-import com.sist.web.exception.CustomException;
-import com.sist.web.exception.ErrorCode;
-import com.sist.web.repository.MemberRepository;
+import com.sist.web.dto.MemberResponse;
+import com.sist.web.service.MemberService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -19,20 +16,13 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class MemberController {
 
-    private final MemberRepository memberRepository;
+    private final MemberService memberService;
 
     @GetMapping("/me")
-    public ResponseEntity<MemberResponse> getMe(@AuthenticationPrincipal String subject) {
-        // JWT subject = "PROVIDER_providerId"
-        String[] parts = subject.split("_", 2);
-
-        Member member = memberRepository.findByProviderAndProviderId(
-                AuthProvider.valueOf(parts[0]),
-                parts[1]
-        ).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
-
-        return ResponseEntity.ok(new MemberResponse(member.getName(), member.getEmail(), member.getPicture()));
+    public ResponseEntity<MemberResponse> getMe(Authentication authentication) {
+        // SecurityConfig에서 인증된 요청만 도달 — authentication은 항상 존재
+        return ResponseEntity.ok(memberService.getMe(authentication));
     }
 
-    public record MemberResponse(String name, String email, String picture) {}
+
 }

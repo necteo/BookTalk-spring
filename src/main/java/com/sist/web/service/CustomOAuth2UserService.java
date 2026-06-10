@@ -11,6 +11,7 @@ import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.sist.web.entity.AuthProvider;
 import com.sist.web.entity.Member;
@@ -22,14 +23,16 @@ import com.sist.web.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
 
     private final MemberRepository memberRepository;
+    private final DefaultOAuth2UserService delegate = new DefaultOAuth2UserService();
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest request) throws OAuth2AuthenticationException {
-        OAuth2User oAuth2User = new DefaultOAuth2UserService().loadUser(request);
+        OAuth2User oAuth2User = delegate.loadUser(request);
 
         String registrationId = request.getClientRegistration().getRegistrationId();
         String userNameAttr = request.getClientRegistration()

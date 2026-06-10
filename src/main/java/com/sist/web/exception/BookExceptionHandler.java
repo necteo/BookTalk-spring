@@ -16,6 +16,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RestControllerAdvice
 public class BookExceptionHandler {
+    @ExceptionHandler(CustomException.class)
+    public ResponseEntity<String> handleCustomException(CustomException e) {
+        log.error("Custom error: {}", e.getErrorCode().getMessage());
+        return ResponseEntity.status(e.getErrorCode().getStatus()).body(e.getErrorCode().getMessage());
+    }
+
     @ExceptionHandler(TypeMismatchException.class)
     public ResponseEntity<String> handleTypeMismatchException(TypeMismatchException e) {
     	log.error("Type mismatch error", e);

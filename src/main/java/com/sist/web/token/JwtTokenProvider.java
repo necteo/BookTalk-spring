@@ -107,16 +107,4 @@ public class JwtTokenProvider {
         return validateAndParse(token).getSubject();
     }
 
-    public String getRole(String token) {
-        return validateAndParse(token).getClaimAsString("role");
-    }
-
-    public boolean isExpired(String token) {
-        try {
-            Instant expiresAt = validateAndParse(token).getExpiresAt();
-            return expiresAt != null && expiresAt.isBefore(Instant.now());
-        } catch (CustomException e) {
-            return true;
-        }
-    }
 }
