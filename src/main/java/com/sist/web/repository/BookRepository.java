@@ -18,5 +18,4 @@ public interface BookRepository extends JpaRepository<WikiBook, String> {
 		""", nativeQuery = true)
 	Optional<WikiBook> mainBookData();
 	
-	Optional<WikiBook> findByIsbn(String isbn);
 }
