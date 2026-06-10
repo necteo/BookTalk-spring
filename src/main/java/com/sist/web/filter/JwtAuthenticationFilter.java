@@ -36,7 +36,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     // JWT 파싱을 건너뛸 경로 — 실제 인가는 SecurityConfig에서 처리
     private static final List<String> WHITELIST = List.of(
         "/", "/error", "/login", "/oauth2",
-        "/api/book", "/api/comment", "/api/auth"
+        "/api/book", "/api/auth"
     );
 
     @Override

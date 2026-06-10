@@ -96,8 +96,8 @@ Access Token 쿠키(15분)가 만료돼도 Refresh Token(7일)이 살아있으�
 | Method | URL | 설명 | 인증 |
 |---|---|---|---|
 | POST | `/api/comment/insert` | 리뷰 작성 | 필요 |
-| PUT | `/api/comment/update` | 리뷰 수정 | 필요 |
-| DELETE | `/api/comment/delete/{no}/{isbn}` | 리뷰 삭제 | 필요 |
+| PUT | `/api/comment/update` | 리뷰 수정 (본인 글만) | 필요 |
+| DELETE | `/api/comment/delete/{no}` | 리뷰 삭제 (본인 글만) | 필요 |
 
 ### 인증
 | Method | URL | 설명 |
