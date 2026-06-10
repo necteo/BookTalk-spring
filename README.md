@@ -1,1 +1,131 @@
-# SpringReactPersonalProject
+# BookTalk — Backend
+
+도서 소셜 플랫폼 BookTalk의 Spring Boot 백엔드 서버입니다.
+
+> Frontend 레포: [BookTalk-react](https://github.com/necteo/BookTalk-react)
+
+## 기술 스택
+
+- Java, Spring Boot 3.x
+- Spring Security, JWT (HttpOnly Cookie)
+- OAuth2 소셜 로그인 (Google / Kakao / Naver)
+- Spring AI + Google Gemini (`gemini-2.5-flash`)
+- JPA / Hibernate, MySQL
+
+---
+
+## 주요 기능
+
+| 기능 | 설명 |
+|---|---|
+| 도서 API | 메인 페이지 데이터, 목록(페이지네이션), 상세 |
+| 리뷰 API | 리뷰 작성 / 수정 / 삭제 |
+| 인증 | OAuth2 소셜 로그인, JWT 발급/재발급/로그아웃 |
+| AI 챗봇 | Gemini SSE 스트리밍 응답 |
+
+---
+
+## 인증 설계
+
+### JWT — HttpOnly Cookie
+localStorage 대신 HttpOnly 쿠키에 토큰을 저장해 XSS로부터 보호합니다.
+
+| 토큰 | 만료 | 경로 |
+|---|---|---|
+| Access Token | 15분 | `/` |
+| Refresh Token | 7일 | `/api/auth` |
+
+Refresh Token Rotation을 적용해 재발급 시 기존 토큰을 폐기하고 새 토큰을 발급합니다.
+
+### OAuth2 로그인 흐름
+
+```
+소셜 로그인 요청
+    → Spring Security OAuth2 필터
+    → CustomOAuth2UserService (회원 저장/업데이트)
+    → OAuth2AuthenticationSuccessHandler
+        → JWT 발급
+        → HttpOnly 쿠키 설정
+        → React 앱으로 리다이렉트
+```
+
+### Spring Security 필터 구조
+
+```
+요청
+ └─▶ JwtAuthenticationFilter
+      ├─ WHITELIST 경로 → 필터 스킵
+      └─ 그 외 → 토큰 파싱 → SecurityContext 설정
+ └─▶ SecurityConfig (authorizeHttpRequests)
+      ├─ /api/book/**, /api/comment/**, /api/auth/**, /api/member/me → permitAll
+      ├─ /api/admin/** → ADMIN
+      └─ 그 외 → authenticated
+```
+
+`JwtAuthenticationFilter`는 토큰 파싱과 인증 설정만 담당하고,
+인가 제어는 `SecurityConfig`에서 일원화해 책임을 분리했습니다.
+
+---
+
+## API 명세
+
+### 도서
+| Method | URL | 설명 | 인증 |
+|---|---|---|---|
+| GET | `/api/book/main` | 메인 페이지 데이터 | 불필요 |
+| GET | `/api/book/list/{page}` | 도서 목록 | 불필요 |
+| GET | `/api/book/detail/{isbn}` | 도서 상세 + 리뷰 | 불필요 |
+
+### 리뷰
+| Method | URL | 설명 | 인증 |
+|---|---|---|---|
+| POST | `/api/comment/insert` | 리뷰 작성 | 필요 |
+| PUT | `/api/comment/update` | 리뷰 수정 | 필요 |
+| DELETE | `/api/comment/delete/{no}/{isbn}` | 리뷰 삭제 | 필요 |
+
+### 인증
+| Method | URL | 설명 |
+|---|---|---|
+| POST | `/api/auth/refresh` | Access Token 재발급 |
+| DELETE | `/api/auth/logout` | 로그아웃 (쿠키 삭제) |
+| GET | `/api/member/me` | 내 정보 조회 (비로그인 시 204) |
+
+### AI 챗봇
+| Method | URL | 설명 | 인증 |
+|---|---|---|---|
+| GET | `/api/chat/stream?message=` | SSE 스트리밍 응답 | 필요 |
+
+---
+
+## 프로젝트 구조
+
+```
+src/main/java/com/sist/web/
+├── controller/     # REST API 컨트롤러
+├── service/        # 비즈니스 로직
+├── repository/     # JPA Repository
+├── entity/         # JPA 엔티티 (Member, Comment, WikiBook, RefreshToken)
+├── dto/            # DTO / Record
+├── config/         # SecurityConfig, CorsConfig
+├── filter/         # JwtAuthenticationFilter
+├── handler/        # OAuth2AuthenticationSuccessHandler/FailureHandler
+├── token/          # JwtTokenProvider
+├── info/           # OAuth2UserInfo (Google/Kakao/Naver)
+├── exception/      # CustomException, ErrorCode, BookExceptionHandler
+└── util/           # CookieUtil
+```
+
+---
+
+## 실행 방법
+
+```bash
+# application.yml 설정 필요
+# spring.datasource.url / username / password
+# jwt.secret / jwt.expiration / jwt.refresh-expiration
+# spring.security.oauth2.client.registration.google/kakao/naver
+# spring.ai.google.genai.api-key
+# oauth2.redirect-url
+
+./mvnw spring-boot:run
+```
