@@ -42,8 +42,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
+        // 경로 세그먼트 경계로 매칭 — "/api/book"이 "/api/bookmark"를 잡지 않도록
         return WHITELIST.stream().anyMatch(white ->
-            white.equals("/") ? path.equals("/") : path.startsWith(white)
+            path.equals(white) || path.startsWith(white + "/")
         );
     }
 
