@@ -7,7 +7,7 @@ import com.sist.web.entity.Comment;
 public record CommentDTO(
 		int no,
 		String isbn,
-		String id,
+		Long id,
 		String name,
 		String msg,
 		String dbday) {
