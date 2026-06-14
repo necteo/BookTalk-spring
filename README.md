@@ -21,7 +21,7 @@
 | 도서 API | 메인 페이지 데이터, 목록(페이지네이션), 상세 |
 | 리뷰 API | 리뷰 작성 / 수정 / 삭제 |
 | 인증 | OAuth2 소셜 로그인, JWT 발급/재발급/로그아웃 |
-| AI 챗봇 | Gemini SSE 스트리밍 응답 |
+| AI 챗봇 | Gemini 기반 챗봇 |
 
 ---
 
@@ -109,7 +109,7 @@ Access Token 쿠키(15분)가 만료돼도 Refresh Token(7일)이 살아있으�
 ### AI 챗봇
 | Method | URL | 설명 | 인증 |
 |---|---|---|---|
-| GET | `/api/chat/stream?message=` | SSE 스트리밍 응답 | 필요 |
+| GET | `/api/chat/stream?message=` | AI 챗봇 응답 | 필요 |
 
 ---
 
@@ -143,5 +143,5 @@ src/main/java/com/sist/web/
 # spring.ai.google.genai.api-key
 # oauth2.redirect-url
 
-./mvnw spring-boot:run
+./gradlew bootRun
 ```
